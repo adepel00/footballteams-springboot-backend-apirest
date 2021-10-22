@@ -3,6 +3,8 @@ package com.footballteams.springboot.backend.apirest.models.entity;
 import lombok.Data;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -12,9 +14,13 @@ import java.util.Date;
 @Table(name="leagues")
 public class League {
     @Id
+    @NotNull
+    @NotEmpty
     private String name;
 
     @Id
+    @NotNull
+    @NotEmpty
     @Temporal(TemporalType.DATE)
     private Date date;
 

@@ -7,12 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.validation.Valid;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
@@ -28,6 +28,17 @@ public class LeagueRestController {
             return errorResponse;
         }
         return errorResponse;
+    }
+    
+    private ResponseEntity checkErrorFields(BindingResult result, Map<String, Object> errorResponse){
+        List<String> errors = new ArrayList<>();
+        for(FieldError err: result.getFieldErrors()){
+            errors.add("The league field '" + err.getField() + "' " + err.getDefaultMessage());
+        }
+
+        errorResponse.put("Errors", errors);
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+
     }
 
     @GetMapping("/leagues")
@@ -54,30 +65,43 @@ public class LeagueRestController {
     }
 
     @PostMapping("/leagues")
-    public ResponseEntity<?> create(@RequestBody League league){
+    public ResponseEntity<?> create(@Valid @RequestBody League league, BindingResult result){
         League newLeague;
+        Map<String, Object> errorResponse = new HashMap<>();
+
+        if(result.hasErrors()){
+            return checkErrorFields(result, errorResponse);
+        }
+
         try {
             newLeague = leagueService.save(league);
         }catch (DataAccessException e){
-            return new ResponseEntity<Map>(showMessagesDataAccessException(e), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(showMessagesDataAccessException(e), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return new ResponseEntity<>(newLeague, HttpStatus.CREATED);
+        errorResponse.put("Message", "League created!");
+        errorResponse.put("League", newLeague);
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.CREATED);
     }
 
     @PutMapping("/leagues/{name}/{date}")
-    public ResponseEntity<?> update(@RequestBody League league, @PathVariable String name, @PathVariable Date date){
+    public ResponseEntity<?> update(@RequestBody League league, @PathVariable String name, @PathVariable Date date, BindingResult result){
         League currentLeague = leagueService.findbyId(new LeagueId(name, date));
         Map<String, Object> errorResponse = new HashMap<>();
 
+        if(result.hasErrors()){
+            return checkErrorFields(result, errorResponse);
+        }
+
         if (currentLeague == null){
-            errorResponse.put("Message", "There is no league with the name \"".concat(name).concat("\" and year".concat(date.toString()).concat("in our database.")));
+            errorResponse.put("Message", "There is no league with the name \"".concat(name).concat("\" in our database."));
             return new ResponseEntity<Map>(errorResponse, HttpStatus.NOT_FOUND);
         }
 
         League updatedLeague;
         try {
-            //Atribute updates
+            //Attribute updates
             currentLeague.setTeams(league.getTeams());
             updatedLeague = leagueService.save(currentLeague);
         }catch (DataAccessException e){

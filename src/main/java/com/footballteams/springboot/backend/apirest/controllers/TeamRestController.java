@@ -35,7 +35,7 @@ public class TeamRestController {
     private ResponseEntity checkErrorFields(BindingResult result, Map<String, Object> errorResponse){
         List<String> errors = new ArrayList<>();
         for(FieldError err: result.getFieldErrors()){
-            errors.add("The field '" + err.getField() + "' " + err.getDefaultMessage());
+            errors.add("The team field '" + err.getField() + "' " + err.getDefaultMessage());
         }
 
         errorResponse.put("Errors", errors);
@@ -103,7 +103,7 @@ public class TeamRestController {
 
         Team updatedTeam;
         try {
-            //Atribute updates
+            //Attribute updates
             currentTeam.setCountry(team.getCountry());
             currentTeam.setRivalTeamName(team.getRivalTeamName());
             currentTeam.setShield(team.getShield());
